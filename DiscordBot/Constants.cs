@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DiscordBot
+﻿namespace DiscordBot
 {
     public static class Constants
     {

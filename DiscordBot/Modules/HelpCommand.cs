@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Commands;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +10,8 @@ namespace DiscordBot.Modules
     public class HelpCommand : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _commandService;
+
+        private readonly string noDescription = "No description available\n";
 
         public HelpCommand(CommandService service)
         {
@@ -23,22 +24,20 @@ namespace DiscordBot.Modules
             List<ModuleInfo> modules = _commandService.Modules.ToList();
             EmbedBuilder embedBuilder = new EmbedBuilder();
 
-
             foreach (ModuleInfo info in modules)
             {
                 var commands = info.Commands.ToList();
-                string embedGroupText = info.Summary ?? "No description available\n";
+                string embedGroupText = info.Summary ?? noDescription;
                 if (info.Group != null)
                     embedBuilder.AddField(info.Group, "\n" + await BuildDescription(commands));
                 else
                 {
                     foreach (CommandInfo command in info.Commands)
                     {
-                        string embedFieldText = command.Summary ?? "No description available";
+                        string embedFieldText = command.Summary ?? noDescription;
                         embedBuilder.AddField(command.Name, embedFieldText);
                     }
                 }
-
             }
 
             await ReplyAsync("Here's a list of commands and their description: \nUse ! as a prefix", false, embedBuilder.Build());
@@ -50,7 +49,7 @@ namespace DiscordBot.Modules
 
             foreach(var command in info)
             {
-                string embedFieldText = command.Summary ?? "No description available";
+                string embedFieldText = command.Summary ?? noDescription;
                 sb.Append(command.Name).Append(' ');
                 sb.Append(embedFieldText);
                 sb.AppendLine();

@@ -1,16 +1,11 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using Discord.WebSocket;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.EventArgs;
 
 namespace DiscordBot.Services
 {
-    public class LavaLinkService
+    public class LavaLinkService //Todo: Default volume 8. Bug when starting first song, it doesnt start.
     {
         private readonly LavaNode _lavaNode;
         private readonly LavaConfig _config;

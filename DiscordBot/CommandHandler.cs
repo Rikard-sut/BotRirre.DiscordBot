@@ -1,5 +1,4 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Reflection;
@@ -37,7 +36,7 @@ namespace DiscordBot
             int argPos = 0;
             if (message.HasStringPrefix("!", ref argPos))
             {
-                var result = await _commands.ExecuteAsync(context, argPos, _services);
+                await _commands.ExecuteAsync(context, argPos, _services);
             }
         }
     }

@@ -1,11 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Victoria.Enums;
-using Discord.WebSocket;
-using DiscordBot.Services;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Victoria;
 using System.Linq;
@@ -56,7 +52,7 @@ namespace DiscordBot.Modules
         {
             var voiceState = Context.User as IVoiceState;
 
-            if (_lavaNode.HasPlayer(Context.Guild))
+            if (_lavaNode.HasPlayer(Context.Guild) && voiceState.VoiceChannel != null)
             {
                 await _lavaNode.LeaveAsync(voiceState.VoiceChannel);
                 await ReplyAsync($"Disconnected from {voiceState.VoiceChannel.Name}!");
@@ -69,6 +65,7 @@ namespace DiscordBot.Modules
         {
             var guild = Context.Guild as IGuild;
             var player = _lavaNode.GetPlayer(guild);
+            await player.UpdateVolumeAsync(10);
             var results = await _lavaNode.SearchYouTubeAsync(query);
             if (results.LoadStatus == LoadStatus.NoMatches || results.LoadStatus == LoadStatus.LoadFailed)
             {
@@ -111,7 +108,7 @@ namespace DiscordBot.Modules
             var guild = Context.Guild as IGuild;
             var player = _lavaNode.GetPlayer(guild);
 
-            if (player != null)
+            if (player != null && player.PlayerState == PlayerState.Playing)
                 await player.PauseAsync();
         }
 

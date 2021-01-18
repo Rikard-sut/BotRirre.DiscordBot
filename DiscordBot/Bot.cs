@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Factories;
 using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,10 +17,10 @@ using Victoria;
 
 namespace DiscordBot
 {
-    public class Program
+    public class Bot
     {
         public static void Main(string[] args)
-            => new Program().RunBotAsync().GetAwaiter().GetResult();
+            => new Bot().RunBotAsync().GetAwaiter().GetResult();
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -28,7 +29,7 @@ namespace DiscordBot
         public async Task RunBotAsync()
         {
             //register user secrets
-            var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
+            var config = new ConfigurationBuilder().AddUserSecrets<Bot>().Build();
             var secretProvider = config.Providers.First();
             if (!secretProvider.TryGet(Constants.Token.RirreBotToken, out var botToken)) return;
 
@@ -47,33 +48,9 @@ namespace DiscordBot
             };
             _commands = new CommandService(commandConfig);
 
-
             //register services
-            _services = new ServiceCollection()
-                .AddMemoryCache()
-                .AddSingleton<IAsyncCacheProvider, MemoryCacheProvider>()
-                .AddSingleton<IReadOnlyPolicyRegistry<string>, PolicyRegistry>((serviceProvider) =>
-                {
-                    PolicyRegistry registry = new PolicyRegistry();
-                    registry.Add(Constants.CachePolicys.HttpGetCache,
-                        Policy.CacheAsync(
-                            serviceProvider
-                                .GetRequiredService<IAsyncCacheProvider>()
-                                .AsyncFor<HttpResponseMessage>(),
-                            TimeSpan.FromSeconds(60)));
-                    return registry;
-                })
-                .AddSingleton(_client)
-                .AddSingleton(_commands)
-                .AddTransient<HttpClient>()
-                .AddSingleton<ICommandHandler, CommandHandler>()
-                .AddSingleton<ILoggingService, LoggingService>()
-                .AddSingleton<ICryptoCoinService, CryptoCoinService>()
-                .AddSingleton<LavaNode>()
-                .AddSingleton<LavaConfig>()
-                .AddSingleton<LavaLinkService>()
-                .BuildServiceProvider();
-
+            await RegisterServices();
+          
             //setup
             await _services.GetRequiredService<ICommandHandler>().Intialize();
             await _services.GetRequiredService<LavaLinkService>().Initialize();
@@ -84,6 +61,39 @@ namespace DiscordBot
             await _client.StartAsync();
 
             await Task.Delay(-1);
+        }
+
+        public Task<IServiceProvider> RegisterServices()
+        {
+            _services = new ServiceCollection()
+                .AddMemoryCache()
+                .AddSingleton<IAsyncCacheProvider, MemoryCacheProvider>()
+                .AddSingleton<IReadOnlyPolicyRegistry<string>, PolicyRegistry>((serviceProvider) =>
+                {
+                    return new PolicyRegistry
+                    {
+                        {
+                            Constants.CachePolicys.HttpGetCache,
+                            Policy.CacheAsync(
+                            serviceProvider
+                                .GetRequiredService<IAsyncCacheProvider>()
+                                .AsyncFor<HttpResponseMessage>(),
+                            TimeSpan.FromSeconds(60))
+                        }
+                    };
+                })
+                .AddSingleton(_client)
+                .AddSingleton(_commands)
+                .AddSingleton<IHttpClientFactory, HttpClientFactory>()
+                .AddSingleton<ICommandHandler, CommandHandler>()
+                .AddSingleton<ILoggingService, LoggingService>()
+                .AddSingleton<ICryptoCoinService, CryptoCoinService>()
+                .AddSingleton<LavaNode>()
+                .AddSingleton<LavaConfig>()
+                .AddSingleton<LavaLinkService>()
+                .BuildServiceProvider();
+
+            return Task.FromResult(_services);
         }
     }
 }

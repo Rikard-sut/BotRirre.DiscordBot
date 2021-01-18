@@ -1,8 +1,4 @@
-﻿using Discord;
-using Discord.Commands;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Discord.Commands;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Modules
@@ -22,7 +18,6 @@ namespace DiscordBot.Modules
 
             var newNickname = nickname;
             await user.ModifyAsync(x => x.Nickname = newNickname);
-
         }
     }
 }
