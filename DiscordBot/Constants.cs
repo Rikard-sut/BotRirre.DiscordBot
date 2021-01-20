@@ -16,5 +16,10 @@
         {
             public const string BitcoinUrl = "https://blockchain.info/ticker";
         }
+
+        public static class File
+        {
+            public const string Path = @"C:\Users\admin\source\repos\BotRirre\DiscordBot\Data\SavedStorage.bin";
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Data;
 using DiscordBot.Factories;
 using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
@@ -10,8 +11,11 @@ using Polly.Caching;
 using Polly.Caching.Memory;
 using Polly.Registry;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using Victoria;
 
@@ -25,6 +29,8 @@ namespace DiscordBot
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
+
+        private Storage _storage;
 
         public async Task RunBotAsync()
         {
@@ -48,12 +54,17 @@ namespace DiscordBot
             };
             _commands = new CommandService(commandConfig);
 
+            //load storage
+            _storage = new Storage();
+            await LoadStorage();
+
             //register services
             await RegisterServices();
-          
+
             //setup
             await _services.GetRequiredService<ICommandHandler>().Intialize();
             await _services.GetRequiredService<LavaLinkService>().Initialize();
+            await _services.GetRequiredService<UserActivityHandler>().Initialize();
             _services.GetRequiredService<ILoggingService>();
 
             await _client.LoginAsync(TokenType.Bot, botToken);
@@ -88,12 +99,28 @@ namespace DiscordBot
                 .AddSingleton<ICommandHandler, CommandHandler>()
                 .AddSingleton<ILoggingService, LoggingService>()
                 .AddSingleton<ICryptoCoinService, CryptoCoinService>()
+                .AddSingleton<UserActivityHandler>()
+                .AddSingleton<UserActivityService>()
+                .AddSingleton(_storage)
                 .AddSingleton<LavaNode>()
                 .AddSingleton<LavaConfig>()
                 .AddSingleton<LavaLinkService>()
                 .BuildServiceProvider();
 
             return Task.FromResult(_services);
+        }
+
+        public Task LoadStorage()
+        {
+            if (File.Exists(Constants.File.Path))
+            {
+                Console.WriteLine("Reading saved file");
+                Stream openFileStream = File.OpenRead(Constants.File.Path);
+                BinaryFormatter deserializer = new BinaryFormatter();
+                _storage = (Storage)deserializer.Deserialize(openFileStream);
+                openFileStream.Close();
+            }
+            return Task.CompletedTask;
         }
     }
 }
